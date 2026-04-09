@@ -1,34 +1,41 @@
-import pandas as pd
+import csv
 import os
 
-# 1. Path to your data folder
-data_folder = "data"
+DATA_DIRECTORY = "./data"
+OUTPUT_FILE_PATH = "./formatted_data.csv"
 
-# 2. List all CSV files in the data folder
-csv_files = [os.path.join(data_folder, f) for f in os.listdir(data_folder) if f.endswith('.csv')]
+# open the output file
+with open(OUTPUT_FILE_PATH, "w") as output_file:
+    writer = csv.writer(output_file)
 
-# 3. Process each CSV
-dfs = []
-for file in csv_files:
-    df = pd.read_csv(file)
-    
-    # Keep only Pink Morsels
-    df = df[df['product'] == 'Pink Morsel']
-    
-    # Create sales column
-    df['sales'] = df['quantity'] * df['price']
-    
-    # Keep only required columns
-    df = df[['sales', 'date', 'region']]
-    
-    # Add processed df to the list
-    dfs.append(df)
+    # add a csv header
+    header = ["sales", "date", "region"]
+    writer.writerow(header)
 
-# 4. Combine all processed DataFrames
-combined_df = pd.concat(dfs, ignore_index=True)
+    # iterate through all files in the data directory
+    for file_name in os.listdir(DATA_DIRECTORY):
+        # open the csv file for reading
+        with open(f"{DATA_DIRECTORY}/{file_name}", "r") as input_file:
+            reader = csv.reader(input_file)
+            # iterate through each row in the csv file
+            row_index = 0
+            for input_row in reader:
+                # if this row is not the csv header, process it
+                if row_index > 0:
+                    # collect data from row
+                    product = input_row[0]
+                    raw_price = input_row[1]
+                    quantity = input_row[2]
+                    transaction_date = input_row[3]
+                    region = input_row[4]
 
-# 5. Save to output CSV
-output_file = "processed_sales.csv"
-combined_df.to_csv(output_file, index=False)
+                    # if this is a pink morsel transaction, process it
+                    if product == "pink morsel":
+                        # finish formatting data
+                        price = float(raw_price[1:])
+                        sale = price * int(quantity)
 
-print(f"Processed data saved to {output_file}")
+                        # write the row to output file
+                        output_row = [sale, transaction_date, region]
+                        writer.writerow(output_row)
+                row_index += 1
